@@ -13,6 +13,7 @@
 # Usage:
 #   fan-control.sh                 Run the control loop (default)
 #   fan-control.sh list-sensors    Print all IPMI sensors and exit
+#   fan-control.sh read-temp       Read and print current temperature(s)
 #   fan-control.sh -h | --help     Show help
 #
 # Compatibility: PowerEdge 11G-13G (R310/R320/R420/R610/R620/R710/R720/
@@ -85,13 +86,25 @@ set_fan_speed() {
 }
 
 get_temp() {
-  local raw
-  raw=$(ipmi sensor reading "$SENSOR_NAME" 2>/dev/null | awk -F'|' '{print $2}' | tr -d ' ')
-  # Reject empty / "na" / non-numeric readings; truncate any decimal portion.
-  if [[ ! "$raw" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+  local raw max_temp=-1 temp_val
+  raw=$(ipmi sensor reading "$SENSOR_NAME" 2>/dev/null) || return 1
+  log "Raw sensor output for '$SENSOR_NAME': $raw"
+  
+  while IFS='|' read -r _ value _; do
+    value=$(echo "$value" | tr -d ' ')
+    if [[ "$value" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+      temp_val="${value%.*}"
+      log "Parsed temperature value: ${temp_val}C"
+      (( temp_val > max_temp )) && max_temp=$temp_val
+    fi
+  done <<< "$raw"
+  
+  if (( max_temp < 0 )); then
+    log "No valid temperature readings found"
     return 1
   fi
-  echo "${raw%.*}"
+  log "Selected maximum temperature: ${max_temp}C"
+  echo "$max_temp"
 }
 
 temp_to_percent() {
@@ -150,6 +163,10 @@ case "${1:-run}" in
   list-sensors)
     ipmi sensor
     exit 0
+    ;;
+  read-temp)
+    temp=$(get_temp) && echo "${temp}C" || echo "Failed to read sensor '$SENSOR_NAME'" >&2
+    exit $?
     ;;
   run)
     ;;

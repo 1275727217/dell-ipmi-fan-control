@@ -9,3 +9,4 @@ fan-control.conf
 
 # OS cruft
 .DS_Store
+/.idea/
