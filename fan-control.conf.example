@@ -1,0 +1,43 @@
+# dell-ipmi-fan-control configuration
+#
+# Copy to /etc/dell-ipmi-fan-control.conf and edit. This file is sourced as
+# Bash by fan-control.sh, so quote values and keep the CURVE array format.
+#
+# If you store a remote IPMI password here, lock the file down:
+#   chmod 600 /etc/dell-ipmi-fan-control.conf
+
+# Seconds between temperature readings.
+INTERVAL=30
+
+# Degrees C of buffer before stepping the fans DOWN (prevents oscillation).
+HYSTERESIS=2
+
+# IPMI sensor to read. Find yours with:  fan-control.sh list-sensors
+# Common values: "Temp" (single-CPU package temp), "Inlet Temp", "Exhaust Temp".
+# Dual-socket boxes often expose two "Temp" sensors; pick the one you want.
+SENSOR_NAME="Temp"
+
+# Where to log and store the PID.
+LOGFILE="/var/log/fan-control.log"
+PIDFILE="/var/run/fan-control.pid"
+
+# --- Remote iDRAC (IPMI over LAN) -------------------------------------------
+# Leave IPMI_HOST empty to control the LOCAL BMC (run the script on the server
+# itself). Set it to drive a Dell from another machine over the network.
+# Requires "IPMI Over LAN" enabled in the iDRAC settings.
+IPMI_HOST=""
+IPMI_USER="root"
+IPMI_PASS=""
+
+# --- Fan speed curve --------------------------------------------------------
+# "temp_up:percent", ascending by temperature. At each reading the highest
+# tier whose temp_up the sensor meets is applied. Stepping down requires the
+# temp to fall below (temp_up - HYSTERESIS).
+CURVE=(
+  "40:15"   # idle, near-silent
+  "50:20"   # light load
+  "60:30"   # normal workload
+  "68:50"   # moderate load
+  "75:70"   # warm, aggressive ramp
+  "80:100"  # max cooling
+)

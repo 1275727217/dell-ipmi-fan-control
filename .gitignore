@@ -1,0 +1,11 @@
+# Local config (may contain an iDRAC password)
+fan-control.conf
+*.conf
+!fan-control.conf.example
+
+# Runtime
+*.log
+*.pid
+
+# OS cruft
+.DS_Store

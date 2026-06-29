@@ -1,0 +1,15 @@
+[Unit]
+Description=Dell IPMI temperature-based fan control
+Documentation=https://github.com/t3chnaztea/dell-ipmi-fan-control
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/fan-control.sh
+# The script traps SIGTERM and restores Dell auto fan mode on stop.
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
